@@ -1,0 +1,80 @@
+@model IEnumerable<HotelReservationSystem1.Models.Room>
+@using HotelReservationSystem1.Helpers
+@{
+    ViewData["Title"] = "Rooms";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Available Rooms</h2>
+        @if (User.IsInRole("Admin"))
+        {
+            <a asp-action="Create" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Add New Room
+            </a>
+        }
+    </div>
+
+    <div class="row">
+        @foreach (var room in Model)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    @if (!string.IsNullOrEmpty(room.ImageUrl))
+                    {
+                        <img src="@room.ImageUrl" class="card-img-top" alt="@room.RoomNumber" style="height: 200px; object-fit: cover;">
+                    }
+                    else
+                    {
+                        <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <span class="fs-1">Room @room.RoomNumber</span>
+                        </div>
+                    }
+                    <div class="card-body">
+                        <h5 class="card-title">Room @room.RoomNumber</h5>
+                        <p class="card-text">
+                            <strong>Type:</strong> @room.RoomType<br />
+                            <strong>Capacity:</strong> @room.Capacity persons<br />
+                            <strong>Price:</strong> @CurrencyHelper.FormatPeso(room.PricePerNight) per night
+                        </p>
+                        @if (!string.IsNullOrEmpty(room.Description))
+                        {
+                            <p class="card-text text-muted">@room.Description</p>
+                        }
+                        <div class="d-flex justify-content-between align-items-center">
+                            @if (room.IsAvailable)
+                            {
+                                <span class="badge bg-success">Available</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Not Available</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex gap-2">
+                            <a asp-action="Details" asp-route-id="@room.Id" class="btn btn-sm btn-info flex-fill">Details</a>
+                            @if (User.Identity!.IsAuthenticated && room.IsAvailable)
+                            {
+                                <a asp-controller="Reservations" asp-action="Create" asp-route-roomId="@room.Id" class="btn btn-sm btn-primary flex-fill">Book</a>
+                            }
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-action="Edit" asp-route-id="@room.Id" class="btn btn-sm btn-warning">Edit</a>
+                                <a asp-action="Delete" asp-route-id="@room.Id" class="btn btn-sm btn-danger">Delete</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            <p class="mb-0">No rooms available at the moment.</p>
+        </div>
+    }
+</div>

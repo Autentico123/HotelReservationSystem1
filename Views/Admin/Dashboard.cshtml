@@ -1,0 +1,231 @@
+@using HotelReservationSystem1.Helpers
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">Dashboard Overview</h2>
+            <p class="text-muted mb-0">Welcome back, @User.Identity!.Name</p>
+        </div>
+        <div>
+            <a asp-controller="Rooms" asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add New Room
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary">
+                    <i class="bi bi-door-open"></i>
+                </div>
+                <div class="stat-value">@ViewBag.TotalRooms</div>
+                <div class="stat-label">Total Rooms</div>
+                <div class="mt-2">
+                    <small class="text-success">
+                        <i class="bi bi-check-circle"></i> @ViewBag.AvailableRooms Available
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-success">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+                <div class="stat-value">@ViewBag.ActiveReservations</div>
+                <div class="stat-label">Active Reservations</div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        Out of @ViewBag.TotalReservations total
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-info">
+                    <i class="bi bi-people"></i>
+                </div>
+                <div class="stat-value">@ViewBag.TotalUsers</div>
+                <div class="stat-label">Total Users</div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        Registered members
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning">
+                    <i class="bi bi-cash"></i>
+                </div>
+                <div class="stat-value">@CurrencyHelper.FormatPesoWhole(ViewBag.TotalRevenue)</div>
+                <div class="stat-label">Total Revenue</div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        Confirmed bookings
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Activity -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="stat-card">
+                <h5 class="mb-3">
+                    <i class="bi bi-calendar-event text-primary"></i> Today's Activity
+                </h5>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-success me-3" style="width: 50px; height: 50px;">
+                                <i class="bi bi-arrow-down-circle" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div>
+                                <div class="h3 mb-0">@ViewBag.TodayCheckIns</div>
+                                <small class="text-muted">Check-ins</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-danger me-3" style="width: 50px; height: 50px;">
+                                <i class="bi bi-arrow-up-circle" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div>
+                                <div class="h3 mb-0">@ViewBag.TodayCheckOuts</div>
+                                <small class="text-muted">Check-outs</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="stat-card">
+                <h5 class="mb-3">
+                    <i class="bi bi-pie-chart text-primary"></i> Quick Stats
+                </h5>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Occupancy Rate</span>
+                            <strong>@(ViewBag.TotalRooms > 0 ? Math.Round((decimal)(ViewBag.TotalRooms - ViewBag.AvailableRooms) / ViewBag.TotalRooms * 100, 1) : 0)%</strong>
+                        </div>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: @(ViewBag.TotalRooms > 0 ? (ViewBag.TotalRooms - ViewBag.AvailableRooms) * 100 / ViewBag.TotalRooms : 0)%"></div>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Available Rooms</span>
+                            <strong>@ViewBag.AvailableRooms</strong>
+                        </div>
+                        <div class="progress mt-2" style="height: 8px;">
+                            <div class="progress-bar bg-primary" role="progressbar" 
+                                 style="width: @(ViewBag.TotalRooms > 0 ? ViewBag.AvailableRooms * 100 / ViewBag.TotalRooms : 0)%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Reservations -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header-custom d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-clock-history"></i> Recent Reservations</span>
+            <a asp-controller="Admin" asp-action="Reservations" class="btn btn-sm btn-light">
+                View All <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+        <div class="card-body p-0">
+            @if (ViewBag.RecentReservations != null && ViewBag.RecentReservations.Count > 0)
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Guest</th>
+                                <th>Room</th>
+                                <th>Check-in</th>
+                                <th>Check-out</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var reservation in ViewBag.RecentReservations)
+                            {
+                                <tr>
+                                    <td>#@reservation.Id</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-person-circle fs-5 text-muted me-2"></i>
+                                            <div>
+                                                <div>@reservation.User.FirstName @reservation.User.LastName</div>
+                                                <small class="text-muted">@reservation.User.Email</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <strong>Room @reservation.Room.RoomNumber</strong><br />
+                                        <small class="text-muted">@reservation.Room.RoomType</small>
+                                    </td>
+                                    <td>@reservation.CheckInDate.ToString("MMM dd, yyyy")</td>
+                                    <td>@reservation.CheckOutDate.ToString("MMM dd, yyyy")</td>
+                                    <td><strong>@CurrencyHelper.FormatPeso(reservation.TotalAmount)</strong></td>
+                                    <td>
+                                        @if (reservation.Status == "Confirmed")
+                                        {
+                                            <span class="badge bg-success">@reservation.Status</span>
+                                        }
+                                        else if (reservation.Status == "Cancelled")
+                                        {
+                                            <span class="badge bg-danger">@reservation.Status</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning">@reservation.Status</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-controller="Reservations" asp-action="Details" asp-route-id="@reservation.Id" 
+                                           class="btn btn-sm btn-outline-primary action-btn" 
+                                           data-bs-toggle="tooltip" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <p class="mb-0">No recent reservations</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

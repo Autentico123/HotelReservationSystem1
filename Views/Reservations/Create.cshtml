@@ -1,0 +1,194 @@
+@model HotelReservationSystem1.Models.Reservation
+@{
+    ViewData["Title"] = "Create Reservation";
+    var selectedRoomId = Model?.RoomId ?? 0;
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">
+                        <i class="bi bi-calendar-check"></i> Book a Room
+                    </h2>
+                    
+                    @if (ViewData.ModelState.ErrorCount > 0)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong><i class="bi bi-exclamation-triangle"></i> Please fix the following errors:</strong>
+                            <ul class="mb-0 mt-2">
+                                @foreach (var modelState in ViewData.ModelState.Values)
+                                {
+                                    foreach (var error in modelState.Errors)
+                                    {
+                                        <li>@error.ErrorMessage</li>
+                                    }
+                                }
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+                    
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        
+                        <!-- Room Selection -->
+                        <div class="mb-3">
+                            <label asp-for="RoomId" class="form-label">
+                                <i class="bi bi-door-open"></i> Select Room
+                            </label>
+                            <select asp-for="RoomId" class="form-select" asp-items="ViewBag.RoomId" id="roomSelect">
+                                <option value="">-- Select a Room --</option>
+                            </select>
+                            <span asp-validation-for="RoomId" class="text-danger"></span>
+                            <small class="form-text text-muted">Choose from available rooms</small>
+                        </div>
+                        
+                        <!-- Room Details Preview -->
+                        <div id="roomDetails" class="card bg-light mb-3" style="display: none;">
+                            <div class="card-body">
+                                <h6 class="card-title">Selected Room Details</h6>
+                                <div id="roomInfo"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Check-in and Check-out Dates -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CheckInDate" class="form-label">
+                                    <i class="bi bi-calendar-plus"></i> Check-in Date
+                                </label>
+                                <input asp-for="CheckInDate" class="form-control" type="date" 
+                                       min="@DateTime.Now.ToString("yyyy-MM-dd")" 
+                                       value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="CheckInDate" class="text-danger"></span>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CheckOutDate" class="form-label">
+                                    <i class="bi bi-calendar-minus"></i> Check-out Date
+                                </label>
+                                <input asp-for="CheckOutDate" class="form-control" type="date" 
+                                       min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" 
+                                       value="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="CheckOutDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                        
+                        <!-- Number of Guests -->
+                        <div class="mb-3">
+                            <label asp-for="NumberOfGuests" class="form-label">
+                                <i class="bi bi-people"></i> Number of Guests
+                            </label>
+                            <input asp-for="NumberOfGuests" class="form-control" type="number" min="1" value="1" />
+                            <span asp-validation-for="NumberOfGuests" class="text-danger"></span>
+                            <small class="form-text text-muted">Maximum capacity depends on room type</small>
+                        </div>
+                        
+                        <!-- Special Requests -->
+                        <div class="mb-3">
+                            <label asp-for="SpecialRequests" class="form-label">
+                                <i class="bi bi-chat-left-text"></i> Special Requests (Optional)
+                            </label>
+                            <textarea asp-for="SpecialRequests" class="form-control" rows="3" 
+                                      placeholder="Enter any special requests or requirements (e.g., extra pillows, early check-in, etc.)"></textarea>
+                            <span asp-validation-for="SpecialRequests" class="text-danger"></span>
+                        </div>
+                        
+                        <!-- Estimated Cost Display -->
+                        <div class="card bg-info bg-opacity-10 border-info mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-cash-stack"></i> Booking Summary
+                                </h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted">Number of Nights:</small>
+                                        <div id="nightsDisplay" class="fw-bold">-</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Estimated Total:</small>
+                                        <div id="totalDisplay" class="fw-bold text-success">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle"></i> Confirm Booking
+                            </button>
+                            <a asp-controller="Rooms" asp-action="Index" class="btn btn-secondary btn-lg">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Update check-out date minimum when check-in changes
+        const checkInInput = document.querySelector('input[name="CheckInDate"]');
+        const checkOutInput = document.querySelector('input[name="CheckOutDate"]');
+        
+        if (checkInInput && checkOutInput) {
+            checkInInput.addEventListener('change', function() {
+                const checkInDate = new Date(this.value);
+                const nextDay = new Date(checkInDate);
+                nextDay.setDate(nextDay.getDate() + 1);
+                
+                checkOutInput.min = nextDay.toISOString().split('T')[0];
+                
+                if (new Date(checkOutInput.value) <= checkInDate) {
+                    checkOutInput.value = nextDay.toISOString().split('T')[0];
+                }
+                
+                calculateTotal();
+            });
+            
+            checkOutInput.addEventListener('change', calculateTotal);
+        }
+        
+        // Calculate nights and estimated total
+        function calculateTotal() {
+            if (!checkInInput || !checkOutInput) return;
+            
+            const checkIn = new Date(checkInInput.value);
+            const checkOut = new Date(checkOutInput.value);
+            
+            if (checkIn && checkOut && checkOut > checkIn) {
+                const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+                const nightsEl = document.getElementById('nightsDisplay');
+                const totalEl = document.getElementById('totalDisplay');
+                
+                if (nightsEl) {
+                    nightsEl.textContent = nights + ' night' + (nights > 1 ? 's' : '');
+                }
+                
+                if (totalEl) {
+                    // Note: Actual total will be calculated on server
+                    totalEl.textContent = 'Calculated at checkout';
+                }
+            } else {
+                const nightsEl = document.getElementById('nightsDisplay');
+                const totalEl = document.getElementById('totalDisplay');
+                
+                if (nightsEl) nightsEl.textContent = '-';
+                if (totalEl) totalEl.textContent = '-';
+            }
+        }
+        
+        // Initial calculation
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateTotal();
+        });
+    </script>
+}

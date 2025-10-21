@@ -1,0 +1,94 @@
+@model HotelReservationSystem1.Models.Reservation
+@using HotelReservationSystem1.Helpers
+@{
+    ViewData["Title"] = "Reservation Details";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Reservation Details</h2>
+                    <hr />
+                    
+                    <dl class="row">
+                        <dt class="col-sm-4">Reservation ID</dt>
+                        <dd class="col-sm-8">#@Model.Id</dd>
+                        
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <dt class="col-sm-4">Guest Name</dt>
+                            <dd class="col-sm-8">@Model.User?.FirstName @Model.User?.LastName</dd>
+                            
+                            <dt class="col-sm-4">Guest Email</dt>
+                            <dd class="col-sm-8">@Model.User?.Email</dd>
+                        }
+                        
+                        <dt class="col-sm-4">Room Number</dt>
+                        <dd class="col-sm-8">@Model.Room?.RoomNumber</dd>
+                        
+                        <dt class="col-sm-4">Room Type</dt>
+                        <dd class="col-sm-8">@Model.Room?.RoomType</dd>
+                        
+                        <dt class="col-sm-4">Check-In Date</dt>
+                        <dd class="col-sm-8">@Model.CheckInDate.ToString("MMMM dd, yyyy")</dd>
+                        
+                        <dt class="col-sm-4">Check-Out Date</dt>
+                        <dd class="col-sm-8">@Model.CheckOutDate.ToString("MMMM dd, yyyy")</dd>
+                        
+                        <dt class="col-sm-4">Number of Nights</dt>
+                        <dd class="col-sm-8">@((Model.CheckOutDate - Model.CheckInDate).Days)</dd>
+                        
+                        <dt class="col-sm-4">Number of Guests</dt>
+                        <dd class="col-sm-8">@Model.NumberOfGuests</dd>
+                        
+                        <dt class="col-sm-4">Total Amount</dt>
+                        <dd class="col-sm-8"><strong>@CurrencyHelper.FormatPeso(Model.TotalAmount)</strong></dd>
+                        
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            @switch (Model.Status)
+                            {
+                                case "Pending":
+                                    <span class="badge bg-warning">@Model.Status</span>
+                                    break;
+                                case "Confirmed":
+                                    <span class="badge bg-success">@Model.Status</span>
+                                    break;
+                                case "Cancelled":
+                                    <span class="badge bg-danger">@Model.Status</span>
+                                    break;
+                                case "Completed":
+                                    <span class="badge bg-info">@Model.Status</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary">@Model.Status</span>
+                                    break;
+                            }
+                        </dd>
+                        
+                        @if (!string.IsNullOrEmpty(Model.SpecialRequests))
+                        {
+                            <dt class="col-sm-4">Special Requests</dt>
+                            <dd class="col-sm-8">@Model.SpecialRequests</dd>
+                        }
+                        
+                        <dt class="col-sm-4">Booking Date</dt>
+                        <dd class="col-sm-8">@Model.CreatedAt.ToString("MMMM dd, yyyy HH:mm")</dd>
+                    </dl>
+                    
+                    <div class="d-flex gap-2">
+                        @if (Model.Status != "Cancelled" && Model.Status != "Completed")
+                        {
+                            <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to cancel this reservation?')">Cancel Reservation</button>
+                            </form>
+                        }
+                        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,63 @@
+@model HotelReservationSystem1.Models.Room
+@using HotelReservationSystem1.Helpers
+@{
+    ViewData["Title"] = "Room Details";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <img src="@Model.ImageUrl" class="card-img-top" alt="@Model.RoomNumber" style="max-height: 400px; object-fit: cover;">
+                }
+                <div class="card-body">
+                    <h2 class="card-title">Room @Model.RoomNumber</h2>
+                    <hr />
+                    
+                    <dl class="row">
+                        <dt class="col-sm-3">Room Type</dt>
+                        <dd class="col-sm-9">@Model.RoomType</dd>
+                        
+                        <dt class="col-sm-3">Capacity</dt>
+                        <dd class="col-sm-9">@Model.Capacity persons</dd>
+                        
+                        <dt class="col-sm-3">Price Per Night</dt>
+                        <dd class="col-sm-9">@CurrencyHelper.FormatPeso(Model.PricePerNight)</dd>
+                        
+                        <dt class="col-sm-3">Status</dt>
+                        <dd class="col-sm-9">
+                            @if (Model.IsAvailable)
+                            {
+                                <span class="badge bg-success">Available</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Not Available</span>
+                            }
+                        </dd>
+                        
+                        @if (!string.IsNullOrEmpty(Model.Description))
+                        {
+                            <dt class="col-sm-3">Description</dt>
+                            <dd class="col-sm-9">@Model.Description</dd>
+                        }
+                    </dl>
+                    
+                    <div class="d-flex gap-2">
+                        @if (User.Identity!.IsAuthenticated && Model.IsAvailable)
+                        {
+                            <a asp-controller="Reservations" asp-action="Create" asp-route-roomId="@Model.Id" class="btn btn-primary">Book This Room</a>
+                        }
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+                        }
+                        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

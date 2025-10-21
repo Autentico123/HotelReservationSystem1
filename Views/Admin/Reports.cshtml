@@ -1,0 +1,262 @@
+@using HotelReservationSystem1.Helpers
+@{
+    ViewData["Title"] = "Reports & Analytics";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="fade-in">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">Reports & Analytics</h2>
+            <p class="text-muted mb-0">View insights and statistics</p>
+        </div>
+        <div>
+            <span class="text-muted">
+                <i class="bi bi-calendar-range"></i> 
+                Last 30 Days
+            </span>
+        </div>
+    </div>
+
+    <!-- Reservations by Status -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header-custom">
+                    <i class="bi bi-pie-chart"></i> Reservations by Status
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.ReservationsByStatus != null && ViewBag.ReservationsByStatus.Count > 0)
+                    {
+                        int total = 0;
+                        foreach (var item in ViewBag.ReservationsByStatus)
+                        {
+                            total += item.Count;
+                        }
+                        
+                        <div class="mb-3">
+                            @foreach (var item in ViewBag.ReservationsByStatus)
+                            {
+                                var percentage = total > 0 ? (item.Count * 100.0 / total) : 0;
+                                var colorClass = item.Status == "Confirmed" ? "bg-success" : 
+                                               item.Status == "Cancelled" ? "bg-danger" : "bg-warning";
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="fw-bold">@item.Status</span>
+                                        <span>@item.Count (@percentage.ToString("F1")%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar @colorClass" role="progressbar" 
+                                             style="width: @percentage%"></div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div class="text-center mt-4">
+                            <h3 class="mb-0">@total</h3>
+                            <p class="text-muted mb-0">Total Reservations</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state py-3">
+                            <i class="bi bi-pie-chart"></i>
+                            <p class="mb-0">No reservation data available</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Reservations by Room Type -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header-custom">
+                    <i class="bi bi-bar-chart"></i> Reservations by Room Type
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.ReservationsByRoomType != null && ViewBag.ReservationsByRoomType.Count > 0)
+                    {
+                        int total = 0;
+                        foreach (var item in ViewBag.ReservationsByRoomType)
+                        {
+                            total += item.Count;
+                        }
+                        
+                        var colors = new[] { "bg-primary", "bg-success", "bg-info", "bg-warning", "bg-danger" };
+                        var colorIndex = 0;
+                        
+                        <div class="mb-3">
+                            @foreach (var item in ViewBag.ReservationsByRoomType)
+                            {
+                                var percentage = total > 0 ? (item.Count * 100.0 / total) : 0;
+                                var colorClass = colors[colorIndex % colors.Length];
+                                colorIndex++;
+                                
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="fw-bold">@item.RoomType</span>
+                                        <span>@item.Count (@percentage.ToString("F1")%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar @colorClass" role="progressbar" 
+                                             style="width: @percentage%"></div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div class="text-center mt-4">
+                            <h3 class="mb-0">@ViewBag.ReservationsByRoomType.Count</h3>
+                            <p class="text-muted mb-0">Room Types Booked</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state py-3">
+                            <i class="bi bi-bar-chart"></i>
+                            <p class="mb-0">No room type data available</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Revenue -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header-custom">
+            <i class="bi bi-graph-up"></i> Monthly Revenue
+        </div>
+        <div class="card-body">
+            @if (ViewBag.MonthlyRevenue != null && ViewBag.MonthlyRevenue.Count > 0)
+            {
+                decimal maxRevenue = 0;
+                decimal totalRevenue = 0;
+                foreach (var item in ViewBag.MonthlyRevenue)
+                {
+                    if (item.Revenue > maxRevenue) maxRevenue = item.Revenue;
+                    totalRevenue += item.Revenue;
+                }
+                
+                <div class="row">
+                    <div class="col-md-9">
+                        <div class="d-flex align-items-end" style="height: 300px;">
+                            @foreach (var item in ViewBag.MonthlyRevenue)
+                            {
+                                var height = maxRevenue > 0 ? ((decimal)item.Revenue * 100m / maxRevenue) : 0;
+                                <div class="flex-fill text-center mx-2">
+                                    <div class="d-flex flex-column justify-content-end" style="height: 250px;">
+                                        <div class="mb-2">
+                                            <small class="text-success fw-bold">@CurrencyHelper.FormatPesoWhole(item.Revenue)</small>
+                                        </div>
+                                        <div class="bg-gradient" 
+                                             style="background: linear-gradient(180deg, #667eea 0%, #764ba2 100%); 
+                                                    height: @height%; min-height: 20px; border-radius: 8px 8px 0 0;">
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">@item.Month</small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="h-100 d-flex flex-column justify-content-center">
+                            <div class="text-center mb-4">
+                                <i class="bi bi-cash fs-1 text-success"></i>
+                                <h3 class="mb-0 mt-2">@CurrencyHelper.FormatPesoWhole(totalRevenue)</h3>
+                                <p class="text-muted mb-0">Total Revenue</p>
+                            </div>
+                            <div class="text-center">
+                                <i class="bi bi-calendar3 fs-1 text-primary"></i>
+                                <h3 class="mb-0 mt-2">@ViewBag.MonthlyRevenue.Count</h3>
+                                <p class="text-muted mb-0">Months Tracked</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="bi bi-graph-up"></i>
+                    <h5>No Revenue Data Available</h5>
+                    <p class="mb-0">Revenue data will appear here once bookings are confirmed</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Quick Statistics -->
+    <div class="row g-3">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="bi bi-calendar-check fs-1 text-primary mb-2"></i>
+                    <h6 class="text-muted mb-1">Total Bookings</h6>
+                    <h3 class="mb-0">
+                        @{
+                            int totalBookings = 0;
+                            if (ViewBag.ReservationsByStatus != null)
+                            {
+                                foreach (var item in ViewBag.ReservationsByStatus)
+                                {
+                                    totalBookings += item.Count;
+                                }
+                            }
+                        }
+                        @totalBookings
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="bi bi-door-open fs-1 text-success mb-2"></i>
+                    <h6 class="text-muted mb-1">Room Types</h6>
+                    <h3 class="mb-0">
+                        @(ViewBag.ReservationsByRoomType != null ? ViewBag.ReservationsByRoomType.Count : 0)
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="bi bi-graph-up-arrow fs-1 text-info mb-2"></i>
+                    <h6 class="text-muted mb-1">Avg Revenue/Month</h6>
+                    <h3 class="mb-0">
+                        @{
+                            decimal avgRevenue = 0;
+                            if (ViewBag.MonthlyRevenue != null && ViewBag.MonthlyRevenue.Count > 0)
+                            {
+                                decimal totalRev = 0;
+                                int count = 0;
+                                foreach (var item in ViewBag.MonthlyRevenue)
+                                {
+                                    totalRev += item.Revenue;
+                                    count++;
+                                }
+                                avgRevenue = count > 0 ? totalRev / count : 0;
+                            }
+                        }
+                        @CurrencyHelper.FormatPesoWhole(avgRevenue)
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="bi bi-clock-history fs-1 text-warning mb-2"></i>
+                    <h6 class="text-muted mb-1">Date Range</h6>
+                    <h3 class="mb-0">30d</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,228 @@
+@model HotelReservationSystem1.Models.Room
+@{
+    ViewData["Title"] = "Create Room";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">
+                        <i class="bi bi-plus-circle"></i> Create New Room
+                    </h2>
+                    <form asp-action="Create">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="RoomNumber" class="form-label"></label>
+                                <input asp-for="RoomNumber" class="form-control" placeholder="e.g., 101" />
+                                <span asp-validation-for="RoomNumber" class="text-danger"></span>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="RoomType" class="form-label"></label>
+                                <select asp-for="RoomType" class="form-select">
+                                    <option value="">Select Room Type</option>
+                                    <option value="Single">Single</option>
+                                    <option value="Double">Double</option>
+                                    <option value="Suite">Suite</option>
+                                    <option value="Deluxe">Deluxe</option>
+                                </select>
+                                <span asp-validation-for="RoomType" class="text-danger"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Capacity" class="form-label"></label>
+                                <input asp-for="Capacity" class="form-control" type="number" min="1" placeholder="Number of guests" />
+                                <span asp-validation-for="Capacity" class="text-danger"></span>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="PricePerNight" class="form-label"></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">&#8369;</span>
+                                    <input asp-for="PricePerNight" class="form-control" type="number" step="0.01" min="0" />
+                                </div>
+                                <span asp-validation-for="PricePerNight" class="text-danger"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label"></label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="Describe the room features and amenities..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="ImageUrl" class="form-label">
+                                Image URL 
+                                <small class="text-muted">(Unsplash recommended)</small>
+                            </label>
+                            <input asp-for="ImageUrl" class="form-control" id="imageUrlInput" placeholder="https://images.unsplash.com/..." />
+                            <span asp-validation-for="ImageUrl" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                <i class="bi bi-info-circle"></i> 
+                                Visit <a href="https://unsplash.com/s/photos/hotel-room" target="_blank">Unsplash</a> 
+                                for free high-quality hotel room images. Use format: <code>?w=800&q=80</code>
+                            </small>
+                        </div>
+
+                        <!-- Image Preview -->
+                        <div class="mb-3" id="imagePreviewContainer" style="display: none;">
+                            <label class="form-label">Image Preview</label>
+                            <div class="card">
+                                <img id="imagePreview" src="" alt="Preview" class="card-img-top" style="max-height: 300px; object-fit: cover;">
+                            </div>
+                        </div>
+
+                        <!-- Sample Unsplash Images -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-images"></i> Quick Select (Sample Unsplash Images)
+                            </label>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <div class="card sample-image-card" style="cursor: pointer;" 
+                                         data-image="https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=800&q=80">
+                                        <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=400&q=60" 
+                                             class="card-img-top" alt="Single Room" style="height: 100px; object-fit: cover;">
+                                        <div class="card-body p-2 text-center">
+                                            <small>Modern Single</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card sample-image-card" style="cursor: pointer;" 
+                                         data-image="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80">
+                                        <img src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400&q=60" 
+                                             class="card-img-top" alt="Double Room" style="height: 100px; object-fit: cover;">
+                                        <div class="card-body p-2 text-center">
+                                            <small>Spacious Double</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card sample-image-card" style="cursor: pointer;" 
+                                         data-image="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&q=80">
+                                        <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&q=60" 
+                                             class="card-img-top" alt="Suite" style="height: 100px; object-fit: cover;">
+                                        <div class="card-body p-2 text-center">
+                                            <small>Luxury Suite</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card sample-image-card" style="cursor: pointer;" 
+                                         data-image="https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800&q=80">
+                                        <img src="https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=400&q=60" 
+                                             class="card-img-top" alt="Deluxe" style="height: 100px; object-fit: cover;">
+                                        <div class="card-body p-2 text-center">
+                                            <small>Premium Deluxe</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card sample-image-card" style="cursor: pointer;" 
+                                         data-image="https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=80">
+                                        <img src="https://images.unsplash.com/photo-1590490360182-c33d57733427?w=400&q=60" 
+                                             class="card-img-top" alt="City View" style="height: 100px; object-fit: cover;">
+                                        <div class="card-body p-2 text-center">
+                                            <small>City View</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card sample-image-card" style="cursor: pointer;" 
+                                         data-image="https://images.unsplash.com/photo-1591088398332-8a7791972843?w=800&q=80">
+                                        <img src="https://images.unsplash.com/photo-1591088398332-8a7791972843?w=400&q=60" 
+                                             class="card-img-top" alt="Executive" style="height: 100px; object-fit: cover;">
+                                        <div class="card-body p-2 text-center">
+                                            <small>Executive Suite</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-muted">Click on any image to use it for this room</small>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input asp-for="IsAvailable" class="form-check-input" checked />
+                            <label asp-for="IsAvailable" class="form-check-label"></label>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Create Room
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Image preview functionality
+        const imageUrlInput = document.getElementById('imageUrlInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        
+        imageUrlInput.addEventListener('input', function() {
+            const url = this.value.trim();
+            if (url) {
+                imagePreview.src = url;
+                imagePreviewContainer.style.display = 'block';
+                
+                // Handle image load error
+                imagePreview.onerror = function() {
+                    imagePreviewContainer.style.display = 'none';
+                };
+            } else {
+                imagePreviewContainer.style.display = 'none';
+            }
+        });
+        
+        // Sample image selection
+        document.querySelectorAll('.sample-image-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const imageUrl = this.getAttribute('data-image');
+                imageUrlInput.value = imageUrl;
+                
+                // Trigger preview update
+                const event = new Event('input', { bubbles: true });
+                imageUrlInput.dispatchEvent(event);
+                
+                // Visual feedback
+                document.querySelectorAll('.sample-image-card').forEach(c => {
+                    c.classList.remove('border-primary', 'border-3');
+                });
+                this.classList.add('border-primary', 'border-3');
+                
+                // Scroll to preview
+                imagePreviewContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        });
+    </script>
+    
+    <style>
+        .sample-image-card {
+            transition: all 0.3s ease;
+        }
+        
+        .sample-image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+    </style>
+}
