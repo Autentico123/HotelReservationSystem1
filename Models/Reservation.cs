@@ -35,5 +35,8 @@ namespace HotelReservationSystem1.Models
         public string? SpecialRequests { get; set; }
         
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+ 
+        // Navigation property for payments
+        public ICollection<Payment> Payments { get; set; } = new List<Payment>();
     }
 }

@@ -26,7 +26,7 @@ namespace HotelReservationSystem1.Data
             }
 
             // Create admin user if doesn't exist
-            var adminEmail = "admin@hotel.com";
+            var adminEmail = "admin@carmengrandhotel.com";
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
             
             if (adminUser == null)

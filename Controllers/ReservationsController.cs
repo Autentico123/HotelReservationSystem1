@@ -30,10 +30,12 @@ namespace HotelReservationSystem1.Controllers
                 ? await _context.Reservations
                     .Include(r => r.Room)
                     .Include(r => r.User)
+                    .Include(r => r.Payments)
                     .OrderByDescending(r => r.CreatedAt)
                     .ToListAsync()
                 : await _context.Reservations
                     .Include(r => r.Room)
+                    .Include(r => r.Payments)
                     .Where(r => r.UserId == user!.Id)
                     .OrderByDescending(r => r.CreatedAt)
                     .ToListAsync();
@@ -52,6 +54,7 @@ namespace HotelReservationSystem1.Controllers
             var reservation = await _context.Reservations
                 .Include(r => r.Room)
                 .Include(r => r.User)
+                .Include(r => r.Payments)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (reservation == null)
@@ -175,7 +178,7 @@ namespace HotelReservationSystem1.Controllers
                     _context.Add(reservation);
                     await _context.SaveChangesAsync();
                     
-                    TempData["SuccessMessage"] = $"Booking confirmed! Room {room!.RoomNumber} reserved from {reservation.CheckInDate:MMM dd, yyyy} to {reservation.CheckOutDate:MMM dd, yyyy}. Total: ${reservation.TotalAmount:F2}";
+                    TempData["SuccessMessage"] = $"Booking confirmed! Room {room!.RoomNumber} reserved from {reservation.CheckInDate:MMM dd, yyyy} to {reservation.CheckOutDate:MMM dd, yyyy}. Total: ?{reservation.TotalAmount:N2}";
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
@@ -351,12 +354,193 @@ namespace HotelReservationSystem1.Controllers
             reservation.Status = "Cancelled";
             await _context.SaveChangesAsync();
 
+            TempData["SuccessMessage"] = "Reservation cancelled successfully.";
             return RedirectToAction(nameof(Index));
+        }
+
+        // GET: Reservations/EditBooking/5 (For regular users)
+        public async Task<IActionResult> EditBooking(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var reservation = await _context.Reservations
+                .AsNoTracking()
+                .Include(r => r.Room)
+                .FirstOrDefaultAsync(r => r.Id == id);
+    
+            if (reservation == null)
+            {
+                return NotFound();
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            
+            // Only allow users to edit their own reservations (admins use different Edit action)
+            if (!User.IsInRole("Admin") && reservation.UserId != user!.Id)
+            {
+                return Forbid();
+            }
+
+            // Check if reservation can be edited
+            if (reservation.Status == "Cancelled" || reservation.Status == "Completed")
+            {
+                TempData["ErrorMessage"] = "Cannot edit a cancelled or completed reservation.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (reservation.CheckInDate < DateTime.Now.Date)
+            {
+                TempData["ErrorMessage"] = "Cannot edit a reservation that has already started or passed.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Get available rooms for the current date range (excluding overlapping bookings except this one)
+            var availableRooms = await _context.Rooms
+                .AsNoTracking()
+                .Where(r => r.IsAvailable || r.Id == reservation.RoomId)
+                .OrderBy(r => r.RoomNumber)
+                .Select(r => new
+                {
+                    r.Id,
+                    r.RoomNumber,
+                    r.RoomType,
+                    r.PricePerNight,
+                    r.Capacity
+                })
+                .ToListAsync();
+            
+            ViewData["RoomId"] = new SelectList(availableRooms, "Id", "RoomNumber", reservation.RoomId);
+            ViewBag.AvailableRooms = availableRooms;
+            
+            return View(reservation);
+        }
+
+    // POST: Reservations/EditBooking/5
+        [HttpPost]
+     [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditBooking(int id, [Bind("Id,UserId,RoomId,CheckInDate,CheckOutDate,NumberOfGuests,SpecialRequests,Status,TotalAmount,CreatedAt")] Reservation reservation)
+        {
+      if (id != reservation.Id)
+            {
+          return NotFound();
+            }
+
+       var user = await _userManager.GetUserAsync(User);
+  
+   // Verify ownership
+            if (!User.IsInRole("Admin") && reservation.UserId != user!.Id)
+         {
+              return Forbid();
+            }
+
+            // Check if reservation can be edited
+  if (reservation.Status == "Cancelled" || reservation.Status == "Completed")
+            {
+   TempData["ErrorMessage"] = "Cannot edit a cancelled or completed reservation.";
+       return RedirectToAction(nameof(Index));
+       }
+
+            // Validate dates
+            if (reservation.CheckInDate < DateTime.Now.Date)
+        {
+        ModelState.AddModelError("CheckInDate", "Check-in date cannot be in the past.");
+   }
+
+            if (reservation.CheckOutDate <= reservation.CheckInDate)
+            {
+         ModelState.AddModelError("CheckOutDate", "Check-out date must be after check-in date.");
+ }
+
+         // Validate room
+            var room = await _context.Rooms.FindAsync(reservation.RoomId);
+ if (room == null)
+         {
+    ModelState.AddModelError("RoomId", "Selected room not found.");
+     }
+            else
+   {
+// Validate guest capacity
+      if (reservation.NumberOfGuests > room.Capacity)
+       {
+              ModelState.AddModelError("NumberOfGuests", $"This room can accommodate maximum {room.Capacity} guest(s).");
+         }
+         
+    // Check for overlapping reservations (excluding current reservation)
+         var hasOverlap = await _context.Reservations
+             .Where(r => r.RoomId == reservation.RoomId 
+    && r.Id != reservation.Id
+  && r.Status != "Cancelled"
+   && ((r.CheckInDate <= reservation.CheckInDate && r.CheckOutDate > reservation.CheckInDate)
+ || (r.CheckInDate < reservation.CheckOutDate && r.CheckOutDate >= reservation.CheckOutDate)
+                || (r.CheckInDate >= reservation.CheckInDate && r.CheckOutDate <= reservation.CheckOutDate)))
+         .AnyAsync();
+                
+   if (hasOverlap)
+          {
+      ModelState.AddModelError("", "This room is already booked for the selected dates. Please choose different dates.");
+}
+         else
+   {
+          // Recalculate total amount
+          var nights = (reservation.CheckOutDate - reservation.CheckInDate).Days;
+          reservation.TotalAmount = room.PricePerNight * nights;
+   }
+            }
+
+            if (ModelState.IsValid)
+      {
+         try
+             {
+         _context.Update(reservation);
+        await _context.SaveChangesAsync();
+ 
+  TempData["SuccessMessage"] = $"Your booking has been updated successfully! Room {room!.RoomNumber} from {reservation.CheckInDate:MMM dd, yyyy} to {reservation.CheckOutDate:MMM dd, yyyy}. New Total: ?{reservation.TotalAmount:N2}";
+           return RedirectToAction(nameof(Index));
+        }
+     catch (DbUpdateConcurrencyException)
+        {
+         if (!ReservationExists(reservation.Id))
+     {
+       return NotFound();
+         }
+     else
+                    {
+   throw;
+    }
+   }
+       }
+
+       // Reload data on failure
+       var availableRooms = await _context.Rooms
+       .AsNoTracking()
+       .Where(r => r.IsAvailable || r.Id == reservation.RoomId)
+       .OrderBy(r => r.RoomNumber)
+       .Select(r => new
+                {
+                    r.Id,
+                    r.RoomNumber,
+                    r.RoomType,
+                    r.PricePerNight,
+                    r.Capacity
+                })
+                .ToListAsync();
+            
+            ViewData["RoomId"] = new SelectList(availableRooms, "Id", "RoomNumber", reservation.RoomId);
+            ViewBag.AvailableRooms = availableRooms;
+            
+            // Reload related entities for display
+            var roomForDisplay = await _context.Rooms.AsNoTracking().FirstOrDefaultAsync(r => r.Id == reservation.RoomId);
+            reservation.Room = roomForDisplay;
+
+            return View(reservation);
         }
 
         private bool ReservationExists(int id)
         {
             return _context.Reservations.Any(e => e.Id == id);
-        }
+}
     }
 }

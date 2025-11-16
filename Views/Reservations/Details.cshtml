@@ -9,83 +9,264 @@
         <div class="col-md-8">
             <div class="card shadow">
                 <div class="card-body">
-                    <h2 class="card-title mb-4">Reservation Details</h2>
+                    <h2 class="card-title mb-4">
+                        <i class="bi bi-receipt"></i> Reservation Details
+                    </h2>
                     <hr />
                     
-                    <dl class="row">
-                        <dt class="col-sm-4">Reservation ID</dt>
-                        <dd class="col-sm-8">#@Model.Id</dd>
-                        
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <dt class="col-sm-4">Guest Name</dt>
-                            <dd class="col-sm-8">@Model.User?.FirstName @Model.User?.LastName</dd>
+                    <!-- Customer Information Section (for regular users - their own info) -->
+                    @if (!User.IsInRole("Admin") && Model.User != null)
+                    {
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="text-primary mb-0">
+                                    <i class="bi bi-person-circle"></i> Your Information
+                                </h5>
+                                <a asp-controller="Account" asp-action="Profile" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i> Edit Profile
+                                </a>
+                            </div>
+                            <dl class="row">
+                                <dt class="col-sm-4">Full Name</dt>
+                                <dd class="col-sm-8">@Model.User.FirstName @Model.User.LastName</dd>
+
+                                <dt class="col-sm-4">Email Address</dt>
+                                <dd class="col-sm-8">@Model.User.Email</dd>
+                                
+                                <dt class="col-sm-4">Phone Number</dt>
+                                <dd class="col-sm-8">
+                                    @if (!string.IsNullOrEmpty(Model.User.PhoneNumber))
+                                    {
+                                        @Model.User.PhoneNumber
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Not provided</span>
+                                        <a asp-controller="Account" asp-action="Profile" class="ms-2 text-decoration-none">
+                                            <small><i class="bi bi-plus-circle"></i> Add phone number</small>
+                                        </a>
+                                    }
+                                </dd>
+                            </dl>
+                            <hr />
+                        </div>
+                    }
+                
+                    <!-- Customer Information Section -->
+                    @if (User.IsInRole("Admin") && Model.User != null)
+                    {
+                        <div class="mb-4">
+                            <h5 class="text-primary">
+                                <i class="bi bi-person-circle"></i> Customer Information
+                            </h5>
+                            <dl class="row">
+                                <dt class="col-sm-4">Full Name</dt>
+                                <dd class="col-sm-8">@Model.User.FirstName @Model.User.LastName</dd>
+        
+                                <dt class="col-sm-4">Email Address</dt>
+                                <dd class="col-sm-8">
+                                    <a href="mailto:@Model.User.Email">@Model.User.Email</a>
+                                </dd>
+                                
+                                <dt class="col-sm-4">Phone Number</dt>
+                                <dd class="col-sm-8">
+                                    @if (!string.IsNullOrEmpty(Model.User.PhoneNumber))
+                                    {
+                                        <a href="tel:@Model.User.PhoneNumber">@Model.User.PhoneNumber</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Not provided</span>
+                                    }
+                                </dd>
+        
+                                <dt class="col-sm-4">Account Created</dt>
+                                <dd class="col-sm-8">@Model.User.CreatedAt.ToString("MMMM dd, yyyy")</dd>
+                            </dl>
+                            <hr />
+                        </div>
+                    }
+                
+                    <!-- Booking Information Section -->
+                    <div class="mb-4">
+                        <h5 class="text-primary">
+                            <i class="bi bi-calendar-event"></i> Booking Information
+                        </h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Reservation ID</dt>
+                            <dd class="col-sm-8"><strong>#@Model.Id</strong></dd>
                             
-                            <dt class="col-sm-4">Guest Email</dt>
-                            <dd class="col-sm-8">@Model.User?.Email</dd>
-                        }
-                        
-                        <dt class="col-sm-4">Room Number</dt>
-                        <dd class="col-sm-8">@Model.Room?.RoomNumber</dd>
-                        
-                        <dt class="col-sm-4">Room Type</dt>
-                        <dd class="col-sm-8">@Model.Room?.RoomType</dd>
-                        
-                        <dt class="col-sm-4">Check-In Date</dt>
-                        <dd class="col-sm-8">@Model.CheckInDate.ToString("MMMM dd, yyyy")</dd>
-                        
-                        <dt class="col-sm-4">Check-Out Date</dt>
-                        <dd class="col-sm-8">@Model.CheckOutDate.ToString("MMMM dd, yyyy")</dd>
-                        
-                        <dt class="col-sm-4">Number of Nights</dt>
-                        <dd class="col-sm-8">@((Model.CheckOutDate - Model.CheckInDate).Days)</dd>
-                        
-                        <dt class="col-sm-4">Number of Guests</dt>
-                        <dd class="col-sm-8">@Model.NumberOfGuests</dd>
-                        
-                        <dt class="col-sm-4">Total Amount</dt>
-                        <dd class="col-sm-8"><strong>@CurrencyHelper.FormatPeso(Model.TotalAmount)</strong></dd>
-                        
-                        <dt class="col-sm-4">Status</dt>
-                        <dd class="col-sm-8">
-                            @switch (Model.Status)
+                            <dt class="col-sm-4">Booking Date</dt>
+                            <dd class="col-sm-8">@Model.CreatedAt.ToString("MMMM dd, yyyy HH:mm")</dd>
+    
+                            <dt class="col-sm-4">Status</dt>
+                            <dd class="col-sm-8">
+                                @switch (Model.Status)
+                                {
+                                    case "Pending":
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> @Model.Status</span>
+                                        break;
+                                    case "Confirmed":
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> @Model.Status</span>
+                                        break;
+                                    case "Cancelled":
+                                        <span class="badge bg-danger"><i class="bi bi-x-circle"></i> @Model.Status</span>
+                                        break;
+                                    case "Completed":
+                                        <span class="badge bg-info"><i class="bi bi-check2-all"></i> @Model.Status</span>
+                                    break;
+                                    default:
+                                        <span class="badge bg-secondary">@Model.Status</span>
+                                        break;
+                                }
+                            </dd>
+                        </dl>
+                    </div>
+
+                    <!-- Room Information Section -->
+                    <div class="mb-4">
+                        <h5 class="text-primary">
+                            <i class="bi bi-door-open"></i> Room Information
+                        </h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Room Number</dt>
+                            <dd class="col-sm-8"><strong>@Model.Room?.RoomNumber</strong></dd>
+   
+                            <dt class="col-sm-4">Room Type</dt>
+                            <dd class="col-sm-8">@Model.Room?.RoomType</dd>
+         
+                            <dt class="col-sm-4">Price per Night</dt>
+                            <dd class="col-sm-8">?@Model.Room?.PricePerNight.ToString("N2")</dd>
+                        </dl>
+                    </div>
+        
+                    <!-- Stay Details Section -->
+                    <div class="mb-4">
+                        <h5 class="text-primary">
+                            <i class="bi bi-calendar-check"></i> Stay Details
+                        </h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Check-In Date</dt>
+                            <dd class="col-sm-8">@Model.CheckInDate.ToString("MMMM dd, yyyy")</dd>
+      
+                            <dt class="col-sm-4">Check-Out Date</dt>
+                            <dd class="col-sm-8">@Model.CheckOutDate.ToString("MMMM dd, yyyy")</dd>
+       
+                            <dt class="col-sm-4">Number of Nights</dt>
+                            <dd class="col-sm-8"><strong>@((Model.CheckOutDate - Model.CheckInDate).Days) night(s)</strong></dd>
+           
+                            <dt class="col-sm-4">Number of Guests</dt>
+                            <dd class="col-sm-8">@Model.NumberOfGuests guest(s)</dd>
+       
+                            @if (!string.IsNullOrEmpty(Model.SpecialRequests))
                             {
-                                case "Pending":
-                                    <span class="badge bg-warning">@Model.Status</span>
-                                    break;
-                                case "Confirmed":
-                                    <span class="badge bg-success">@Model.Status</span>
-                                    break;
-                                case "Cancelled":
-                                    <span class="badge bg-danger">@Model.Status</span>
-                                    break;
-                                case "Completed":
-                                    <span class="badge bg-info">@Model.Status</span>
-                                    break;
-                                default:
-                                    <span class="badge bg-secondary">@Model.Status</span>
-                                    break;
+                                <dt class="col-sm-4">Special Requests</dt>
+                                <dd class="col-sm-8">
+                                    <div class="alert alert-light mb-0">
+                                        @Model.SpecialRequests
+                                    </div>
+                                </dd>
                             }
-                        </dd>
+                        </dl>
+                    </div>
+       
+                    <!-- Payment Information Section -->
+                    <div class="mb-4">
+                        <h5 class="text-primary">
+                            <i class="bi bi-cash-coin"></i> Payment Information
+                        </h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Total Amount</dt>
+                            <dd class="col-sm-8">
+                                <h4 class="text-success mb-0">?@Model.TotalAmount.ToString("N2")</h4>
+                            </dd>
+                            
+                            @{
+                                var payment = Model.Payments?.OrderByDescending(p => p.CreatedAt).FirstOrDefault();
+                            }
+        
+                            @if (payment != null)
+                            {
+                                <dt class="col-sm-4">Payment Status</dt>
+                                <dd class="col-sm-8">
+                                    @switch (payment.PaymentStatus)
+                                    {
+                                        case "Pending":
+                                            <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Pending Verification</span>
+                                            <br /><small class="text-muted">Payment submitted on @payment.CreatedAt.ToString("MMM dd, yyyy HH:mm")</small>
+                                            break;
+                                        case "Paid":
+                                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Paid</span>
+                                            <br /><small class="text-muted">Verified on @payment.PaidAt?.ToString("MMM dd, yyyy HH:mm")</small>
+                                            break;
+                                        case "Failed":
+                                            <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Payment Failed</span>
+                                            @if (!string.IsNullOrEmpty(payment.Notes))
+                                            {
+                                                <br /><small class="text-danger">@payment.Notes</small>
+                                            }
+                                            break;
+                                    }
+                                </dd>
+   
+                                @if (payment.PaymentStatus == "Paid")
+                                {
+                                    <dt class="col-sm-4">Payment Method</dt>
+                                    <dd class="col-sm-8">GCash - @payment.GCashNumber</dd>
+     
+                                    <dt class="col-sm-4">Reference Number</dt>
+                                    <dd class="col-sm-8"><code>@payment.GCashReferenceNumber</code></dd>
+                                }
+                            }
+                            else if (Model.Status != "Cancelled")
+                            {
+                                <dt class="col-sm-4">Payment Status</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-secondary">Not Paid</span>
+                                </dd>
+                            }
+                        </dl>
+                    </div>
+   
+                    <div class="d-flex gap-2 mt-4">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Reservations
+                        </a>
                         
-                        @if (!string.IsNullOrEmpty(Model.SpecialRequests))
-                        {
-                            <dt class="col-sm-4">Special Requests</dt>
-                            <dd class="col-sm-8">@Model.SpecialRequests</dd>
-                        }
-                        
-                        <dt class="col-sm-4">Booking Date</dt>
-                        <dd class="col-sm-8">@Model.CreatedAt.ToString("MMMM dd, yyyy HH:mm")</dd>
-                    </dl>
-                    
-                    <div class="d-flex gap-2">
-                        @if (Model.Status != "Cancelled" && Model.Status != "Completed")
-                        {
+                        @{
+   var existingPayment = Model.Payments?.FirstOrDefault(p => p.PaymentStatus == "Paid" || p.PaymentStatus == "Pending");
+        }
+   
+        @if (Model.Status != "Cancelled" && Model.Status != "Completed" && existingPayment == null)
+     {
+   @if (!User.IsInRole("Admin"))
+  {
+  <a asp-controller="Payments" asp-action="GCashPayment" asp-route-id="@Model.Id" class="btn btn-success">
+     <i class="bi bi-credit-card"></i> Pay with GCash
+  </a>
+   }
+    }
+  
+    @if (Model.Status != "Cancelled" && Model.Status != "Completed")
+   {
+                            @if (!User.IsInRole("Admin") && Model.CheckInDate >= DateTime.Now.Date)
+                            {
+                                <a asp-action="EditBooking" asp-route-id="@Model.Id" class="btn btn-warning">
+                                    <i class="bi bi-pencil"></i> Edit Booking
+                                </a>
+                            }
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                                    <i class="bi bi-pencil"></i> Edit Reservation
+                                </a>
+                            }
                             <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="d-inline">
-                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to cancel this reservation?')">Cancel Reservation</button>
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to cancel this reservation?')">
+                                    <i class="bi bi-x-circle"></i> Cancel Reservation
+                                </button>
                             </form>
                         }
-                        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
                     </div>
                 </div>
             </div>

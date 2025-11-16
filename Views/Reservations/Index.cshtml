@@ -2,6 +2,7 @@
 @using HotelReservationSystem1.Helpers
 @{
     ViewData["Title"] = "My Reservations";
+    Context.Response.ContentType = "text/html; charset=utf-8";
 }
 
 <div class="container mt-4">
@@ -31,6 +32,34 @@
         </div>
     }
 
+    @if (!User.IsInRole("Admin") && Model.Any())
+    {
+        var unpaidReservations = Model.Where(r => 
+            r.Status != "Cancelled" && 
+            r.Status != "Completed" && 
+            (r.Payments == null || !r.Payments.Any(p => p.PaymentStatus == "Paid" || p.PaymentStatus == "Pending"))
+        ).ToList();
+        
+        @if (unpaidReservations.Any())
+        {
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <h5 class="alert-heading">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Payment Required
+                </h5>
+                <p class="mb-2">
+                    You have <strong>@unpaidReservations.Count</strong> unpaid reservation(s). 
+                    Please complete your payment to confirm your booking.
+                </p>
+                <hr>
+                <p class="mb-0">
+                    <i class="bi bi-info-circle"></i> Click the <strong class="text-success">"Pay"</strong> button 
+                    or the <strong class="text-danger">"Unpaid - Pay Now"</strong> badge to pay with GCash.
+                </p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+    }
+
     @if (Model.Any())
     {
         <div class="table-responsive">
@@ -40,13 +69,16 @@
                         <th>Reservation ID</th>
                         @if (User.IsInRole("Admin"))
                         {
-                            <th>Guest</th>
+                            <th>Guest Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
                         }
                         <th>Room</th>
                         <th>Check-In</th>
                         <th>Check-Out</th>
                         <th>Guests</th>
                         <th>Total</th>
+                        <th>Payment</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -62,6 +94,14 @@
                                     <i class="bi bi-person"></i>
                                     @reservation.User?.FirstName @reservation.User?.LastName
                                 </td>
+                                <td>
+                                    <i class="bi bi-envelope"></i>
+                                    <small>@reservation.User?.Email</small>
+                                </td>
+                                <td>
+                                    <i class="bi bi-telephone"></i>
+                                    <small>@reservation.User?.PhoneNumber</small>
+                                </td>
                             }
                             <td>
                                 <i class="bi bi-door-open"></i>
@@ -70,21 +110,61 @@
                             <td>@reservation.CheckInDate.ToString("MMM dd, yyyy")</td>
                             <td>@reservation.CheckOutDate.ToString("MMM dd, yyyy")</td>
                             <td>@reservation.NumberOfGuests</td>
-                            <td><strong>$@reservation.TotalAmount.ToString("F2")</strong></td>
+                            <td><strong>?@reservation.TotalAmount.ToString("N2")</strong></td>
+                            <td>
+                                @{
+                                    var payment = reservation.Payments?.OrderByDescending(p => p.CreatedAt).FirstOrDefault();
+                                }
+                                @if (payment != null)
+                                {
+                                    switch (payment.PaymentStatus)
+                                    {
+                                        case "Pending":
+                                            <span class="badge bg-warning text-dark" title="Payment verification in progress">
+                                                <i class="bi bi-clock"></i> Verifying
+                                            </span>
+                                            break;
+                                        case "Paid":
+                                            <span class="badge bg-success" title="Payment confirmed">
+                                                <i class="bi bi-check-circle"></i> Paid
+                                            </span>
+                                            break;
+                                        case "Failed":
+                                            <span class="badge bg-danger" title="Payment rejected - please try again">
+                                                <i class="bi bi-x-circle"></i> Failed
+                                            </span>
+                                            break;
+                                    }
+                                }
+                                else
+                                {
+                                    @if (!User.IsInRole("Admin") && reservation.Status != "Cancelled" && reservation.Status != "Completed")
+                                    {
+                                        <a asp-controller="Payments" asp-action="GCashPayment" asp-route-id="@reservation.Id" 
+                                           class="badge bg-danger text-decoration-none" title="Click to pay now">
+                                            <i class="bi bi-exclamation-circle"></i> Unpaid - Pay Now
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary"><i class="bi bi-dash"></i> No Payment</span>
+                                    }
+                                }
+                            </td>
                             <td>
                                 @switch (reservation.Status)
                                 {
                                     case "Pending":
-                                        <span class="badge bg-warning">? @reservation.Status</span>
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> @reservation.Status</span>
                                         break;
                                     case "Confirmed":
-                                        <span class="badge bg-success">? @reservation.Status</span>
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> @reservation.Status</span>
                                         break;
                                     case "Cancelled":
-                                        <span class="badge bg-danger">? @reservation.Status</span>
+                                        <span class="badge bg-danger"><i class="bi bi-x-circle"></i> @reservation.Status</span>
                                         break;
                                     case "Completed":
-                                        <span class="badge bg-info">? @reservation.Status</span>
+                                        <span class="badge bg-info"><i class="bi bi-check2-all"></i> @reservation.Status</span>
                                         break;
                                     default:
                                         <span class="badge bg-secondary">@reservation.Status</span>
@@ -99,6 +179,27 @@
                                     </a>
                                     @if (reservation.Status != "Cancelled" && reservation.Status != "Completed")
                                     {
+                                        @* Show Pay with GCash button if no payment or payment failed *@
+                                        @if (!User.IsInRole("Admin"))
+                                        {
+                                            var existingPayment = reservation.Payments?.FirstOrDefault(p => p.PaymentStatus == "Paid" || p.PaymentStatus == "Pending");
+                                            
+                                            @if (existingPayment == null)
+                                            {
+                                                <a asp-controller="Payments" asp-action="GCashPayment" asp-route-id="@reservation.Id" 
+                                                   class="btn btn-sm btn-success" title="Pay with GCash">
+                                                    <i class="bi bi-credit-card"></i> Pay
+                                                </a>
+                                            }
+                                        }
+                                        
+                                        @if (!User.IsInRole("Admin") && reservation.CheckInDate >= DateTime.Now.Date)
+                                        {
+                                            <a asp-action="EditBooking" asp-route-id="@reservation.Id" 
+                                               class="btn btn-sm btn-warning" title="Edit My Booking">
+                                                <i class="bi bi-pencil"></i> Edit
+                                            </a>
+                                        }
                                         <form asp-action="Cancel" asp-route-id="@reservation.Id" method="post" class="d-inline">
                                             <button type="submit" class="btn btn-sm btn-danger" 
                                                     title="Cancel Reservation"

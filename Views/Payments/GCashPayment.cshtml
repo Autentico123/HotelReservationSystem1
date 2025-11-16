@@ -1,0 +1,188 @@
+@model HotelReservationSystem1.Models.ViewModels.GCashPaymentViewModel
+@using System.IO
+@{
+    ViewData["Title"] = "GCash Payment";
+}
+
+<style>
+    .qr-code-container {
+        transition: transform 0.3s ease;
+    }
+    
+    .qr-code-container:hover {
+        transform: scale(1.05);
+    }
+    
+    .payment-instruction-card {
+        border-left: 4px solid #ffc107;
+    }
+    
+    .gcash-badge {
+        font-size: 1.1rem;
+        padding: 0.5rem 1rem;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-credit-card"></i> GCash Payment
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Reservation Summary -->
+                    <div class="alert alert-info">
+                        <h5><i class="bi bi-info-circle"></i> Reservation Summary</h5>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Reservation ID:</dt>
+                            <dd class="col-sm-8">#@Model.ReservationId</dd>
+                            
+                            <dt class="col-sm-4">Room:</dt>
+                            <dd class="col-sm-8">@Model.RoomNumber (@Model.RoomType)</dd>
+                            
+                            <dt class="col-sm-4">Check-In:</dt>
+                            <dd class="col-sm-8">@Model.CheckInDate.ToString("MMM dd, yyyy")</dd>
+                            
+                            <dt class="col-sm-4">Check-Out:</dt>
+                            <dd class="col-sm-8">@Model.CheckOutDate.ToString("MMM dd, yyyy")</dd>
+                            
+                            <dt class="col-sm-4">Nights:</dt>
+                            <dd class="col-sm-8">@Model.NumberOfNights night(s)</dd>
+                            
+                            <dt class="col-sm-4">Total Amount:</dt>
+                            <dd class="col-sm-8"><strong class="text-success">?@Model.Amount.ToString("N2")</strong></dd>
+                        </dl>
+                    </div>
+
+          <!-- GCash Payment Instructions -->
+  <div class="alert alert-warning">
+         <h5><i class="bi bi-exclamation-triangle"></i> Payment Instructions</h5>
+                
+                <!-- QR Code Section -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="card-title"><i class="bi bi-qr-code"></i> Scan QR Code</h6>
+                                <div class="p-3 bg-white rounded qr-code-container">
+                                    @* Check if QR code image exists *@
+                                    @if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "images", "gcash-qr.png")))
+                                    {
+                                        <img src="~/images/gcash-qr.png" alt="GCash QR Code" class="img-fluid" style="max-width: 250px;" />
+                                    }
+                                    else if (System.IO.File.Exists(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "images", "gcash-qr.jpg")))
+                                    {
+                                        <img src="~/images/gcash-qr.jpg" alt="GCash QR Code" class="img-fluid" style="max-width: 250px;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="p-4 bg-secondary bg-opacity-10 rounded">
+                                            <i class="bi bi-qr-code display-1 text-muted"></i>
+                                            <p class="text-muted mt-2 mb-0">
+                                                <small>Scan our GCash QR Code<br />from the GCash app</small>
+                                            </p>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="mt-3">
+                                    <span class="badge bg-primary gcash-badge">
+                                        <i class="bi bi-phone"></i> 09123456789
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Option 1: Scan QR Code</h6>
+                        <ol class="mb-3">
+                            <li>Open your <strong>GCash app</strong></li>
+                            <li>Tap <strong>"Scan QR"</strong></li>
+                            <li>Scan the QR code on the left</li>
+                            <li>Enter amount: <strong>?@Model.Amount.ToString("N2")</strong></li>
+                            <li>Complete the payment</li>
+                        </ol>
+                        
+                        <h6 class="fw-bold">Option 2: Manual Transfer</h6>
+                        <ol class="mb-0">
+                            <li>Open your <strong>GCash app</strong></li>
+                            <li>Select <strong>"Send Money"</strong></li>
+                            <li>Enter number: <strong class="text-primary">09123456789</strong></li>
+                            <li>Send <strong>?@Model.Amount.ToString("N2")</strong></li>
+                            <li>Note the reference number</li>
+                        </ol>
+                    </div>
+                </div>
+                
+                <hr>
+                <p class="mb-0">
+                    <i class="bi bi-info-circle"></i> After payment, fill in the form below with your transaction details.
+                </p>
+   </div>
+
+  <!-- Payment Form -->
+               <form asp-action="GCashPayment" method="post">
+            <input type="hidden" asp-for="ReservationId" />
+     <input type="hidden" asp-for="Amount" />
+     
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+  <div class="mb-3">
+        <label asp-for="GCashNumber" class="form-label">
+   <i class="bi bi-phone"></i> Your GCash Mobile Number
+           </label>
+               <input asp-for="GCashNumber" class="form-control" placeholder="09XXXXXXXXX or +639XXXXXXXXX" />
+     <span asp-validation-for="GCashNumber" class="text-danger"></span>
+  <small class="form-text text-muted">Enter the GCash number you used for the payment</small>
+   </div>
+
+           <div class="mb-3">
+       <label asp-for="GCashReferenceNumber" class="form-label">
+ <i class="bi bi-hash"></i> GCash Reference Number
+    </label>
+            <input asp-for="GCashReferenceNumber" class="form-control" placeholder="Enter the 13-digit reference number" />
+     <span asp-validation-for="GCashReferenceNumber" class="text-danger"></span>
+           <small class="form-text text-muted">
+            Find this in your GCash transaction details (usually 10-13 digits)
+   </small>
+          </div>
+
+      <div class="mb-3">
+            <label asp-for="Notes" class="form-label">
+<i class="bi bi-chat-left-text"></i> Additional Notes (Optional)
+               </label>
+      <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Any additional information about your payment..."></textarea>
+   <span asp-validation-for="Notes" class="text-danger"></span>
+        </div>
+
+     <div class="alert alert-light border">
+ <h6><i class="bi bi-shield-check"></i> Important Reminders:</h6>
+      <ul class="mb-0">
+     <li>Make sure you have completed the GCash payment before submitting this form</li>
+  <li>Double-check your reference number for accuracy</li>
+      <li>Your payment will be verified by our admin within 24 hours</li>
+ <li>You will receive a confirmation once verified</li>
+      </ul>
+       </div>
+
+     <div class="d-flex justify-content-between mt-4">
+  <a asp-controller="Reservations" asp-action="Details" asp-route-id="@Model.ReservationId" class="btn btn-secondary">
+              <i class="bi bi-arrow-left"></i> Back to Reservation
+         </a>
+         <button type="submit" class="btn btn-primary btn-lg">
+  <i class="bi bi-check-circle"></i> Submit Payment
+        </button>
+          </div>
+      </form>
+                </div>
+         </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

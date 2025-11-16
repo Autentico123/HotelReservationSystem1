@@ -2,6 +2,7 @@ using HotelReservationSystem1.Data;
 using HotelReservationSystem1.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 namespace HotelReservationSystem1
 {
@@ -12,7 +13,12 @@ namespace HotelReservationSystem1
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            builder.Services.AddControllersWithViews();
+            builder.Services.AddControllersWithViews()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+                });
 
             // Add DbContext with MySQL
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
