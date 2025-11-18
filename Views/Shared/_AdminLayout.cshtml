@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Carmen Grand Hotel - Admin Panel</title>
+    <title>@ViewData["Title"] - Carmen Grand Hotel - @(User.IsInRole("Staff") ? "Staff Panel" : "Admin Panel")</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
@@ -16,8 +16,21 @@
         <aside id="sidebar" class="sidebar">
             <div class="sidebar-header">
                 <a href="@Url.Action("Dashboard", "Admin")" class="sidebar-brand">
-                    <i class="bi bi-shield-lock-fill"></i>
-                    <span>CGH Admin</span>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <span>CGH Admin</span>
+                    }
+                    else if (User.IsInRole("Staff"))
+                    {
+                        <i class="bi bi-person-badge-fill"></i>
+                        <span>CGH Staff</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <span>CGH Panel</span>
+                    }
                 </a>
                 <button class="sidebar-toggle btn btn-link d-lg-none" id="sidebarToggle">
                     <i class="bi bi-x-lg"></i>
@@ -50,12 +63,15 @@
                     </a>
                 </li>
                 
-                <li class="sidebar-item">
-                    <a asp-controller="Admin" asp-action="Users" class="sidebar-link">
-                        <i class="bi bi-people"></i>
-                        <span>Users</span>
-                    </a>
-                </li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="sidebar-item">
+                        <a asp-controller="Admin" asp-action="Users" class="sidebar-link">
+                            <i class="bi bi-people"></i>
+                            <span>Users</span>
+                        </a>
+                    </li>
+                }
                 
                 <li class="sidebar-header">
                     Reports & Analytics
@@ -95,6 +111,14 @@
                 <div class="user-info">
                     <i class="bi bi-person-circle"></i>
                     <span>@User.Identity!.Name</span>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <span class="badge bg-danger ms-2">Admin</span>
+                    }
+                    else if (User.IsInRole("Staff"))
+                    {
+                        <span class="badge bg-warning ms-2">Staff</span>
+                    }
                 </div>
                 <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                     <button type="submit" class="btn btn-sm btn-outline-light w-100">

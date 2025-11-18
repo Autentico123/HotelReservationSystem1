@@ -51,6 +51,10 @@ namespace HotelReservationSystem1.Controllers
                     {
                         await _roleManager.CreateAsync(new IdentityRole("Admin"));
                     }
+                    if (!await _roleManager.RoleExistsAsync("Staff"))
+                    {
+                        await _roleManager.CreateAsync(new IdentityRole("Staff"));
+                    }
                     if (!await _roleManager.RoleExistsAsync("User"))
                     {
                         await _roleManager.CreateAsync(new IdentityRole("User"));
@@ -95,10 +99,10 @@ namespace HotelReservationSystem1.Controllers
                     // Get the logged-in user
                     var user = await _userManager.FindByEmailAsync(model.Email);
                     
-                    // Check if user is an admin
-                    if (user != null && await _userManager.IsInRoleAsync(user, "Admin"))
+                    // Check if user is an admin or staff
+                    if (user != null && (await _userManager.IsInRoleAsync(user, "Admin") || await _userManager.IsInRoleAsync(user, "Staff")))
                     {
-                        // Redirect admins to admin dashboard
+                        // Redirect admins and staff to admin dashboard
                         return RedirectToAction("Dashboard", "Admin");
                     }
                     

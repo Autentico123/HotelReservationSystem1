@@ -11,7 +11,7 @@ Carmen Grand Hotel offers luxury accommodations and exceptional service in the h
 - **User Management**
   - User registration and authentication
   - Profile management
-  - Role-based access control (Admin/User)
+  - Role-based access control (Admin/Staff/User)
 
 - **Room Management**
   - Browse available rooms
@@ -35,8 +35,13 @@ Carmen Grand Hotel offers luxury accommodations and exceptional service in the h
   - Comprehensive dashboard
   - Room management
   - Reservation oversight
-  - User management
+  - User management (Admin only)
   - Reports and analytics
+
+- **Staff Access**
+  - Dashboard and reports access
+  - Room and reservation management
+  - Limited administrative privileges
 
 ## ??? Technology Stack
 
@@ -93,10 +98,34 @@ After initial setup, the following accounts are available:
 - **Admin Account**
   - Email: admin@carmengrandhotel.com
   - Password: Admin@123
+  - Full access to all features including user management
 
 - **Test User Account**
   - Email: user@carmengrandhotel.com
   - Password: User@123
+  - Standard user access for making reservations
+
+## ?? User Roles
+
+The system supports three user roles with different permission levels:
+
+### Admin
+- Full system access
+- User role management
+- Can assign/remove Admin and Staff roles
+- Access to all dashboard features
+
+### Staff
+- Access to admin dashboard
+- Can manage rooms and reservations
+- Can view reports and analytics
+- Cannot manage users or assign roles
+
+### User
+- Standard customer access
+- Can make and manage their own reservations
+- Profile management
+- Payment processing
 
 ## ?? Contact Information
 

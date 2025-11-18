@@ -16,7 +16,7 @@ namespace HotelReservationSystem1.Data
             await context.Database.MigrateAsync();
 
             // Create roles if they don't exist
-            string[] roleNames = { "Admin", "User" };
+            string[] roleNames = { "Admin", "Staff", "User" };
             foreach (var roleName in roleNames)
             {
                 if (!await roleManager.RoleExistsAsync(roleName))

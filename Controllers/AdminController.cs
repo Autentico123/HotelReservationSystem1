@@ -1,5 +1,6 @@
 using HotelReservationSystem1.Data;
 using HotelReservationSystem1.Models;
+using HotelReservationSystem1.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HotelReservationSystem1.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")]
     public class AdminController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -92,6 +93,7 @@ namespace HotelReservationSystem1.Controllers
         }
 
         // GET: Admin/Users
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Users()
         {
             var users = await _userManager.Users
@@ -116,6 +118,107 @@ namespace HotelReservationSystem1.Controllers
             return View(userViewModels);
         }
 
+        // GET: Admin/CreateUser
+        [Authorize(Roles = "Admin")]
+        public IActionResult CreateUser()
+        {
+            return View();
+        }
+
+        // POST: Admin/CreateUser
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateUser(CreateUserViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                // Check if user already exists
+                var existingUser = await _userManager.FindByEmailAsync(model.Email);
+                if (existingUser != null)
+                {
+                    ModelState.AddModelError("Email", "A user with this email already exists.");
+                    return View(model);
+                }
+
+                var user = new ApplicationUser
+                {
+                    UserName = model.Email,
+                    Email = model.Email,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName,
+                    PhoneNumber = model.PhoneNumber,
+                    EmailConfirmed = model.EmailConfirmed
+                };
+
+                var result = await _userManager.CreateAsync(user, model.Password);
+
+                if (result.Succeeded)
+                {
+                    // Ensure the selected role exists
+                    if (!await _roleManager.RoleExistsAsync(model.Role))
+                    {
+                        await _roleManager.CreateAsync(new IdentityRole(model.Role));
+                    }
+
+                    // Assign the selected role
+                    await _userManager.AddToRoleAsync(user, model.Role);
+
+                    TempData["SuccessMessage"] = $"User {user.Email} has been created successfully with {model.Role} role.";
+                    return RedirectToAction(nameof(Users));
+                }
+
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+            }
+
+            return View(model);
+        }
+
+        // POST: Admin/DeleteUser
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteUser(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            // Prevent deleting your own account
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser?.Id == userId)
+            {
+                TempData["ErrorMessage"] = "You cannot delete your own account.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            // Check if user has reservations
+            var hasReservations = await _context.Reservations.AnyAsync(r => r.UserId == userId);
+            if (hasReservations)
+            {
+                TempData["ErrorMessage"] = "Cannot delete user with existing reservations. Please cancel or complete their reservations first.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            var result = await _userManager.DeleteAsync(user);
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = $"User {user.Email} has been deleted successfully.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to delete user.";
+            }
+
+            return RedirectToAction(nameof(Users));
+        }
+
         // POST: Admin/UpdateReservationStatus
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -137,6 +240,7 @@ namespace HotelReservationSystem1.Controllers
         // POST: Admin/ToggleUserRole
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ToggleUserRole(string userId, string role)
         {
             var user = await _userManager.FindByIdAsync(userId);
