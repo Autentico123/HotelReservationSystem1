@@ -1,4 +1,5 @@
-@model HotelReservationSystem1.Models.Reservation
+﻿@model HotelReservationSystem1.Models.Reservation
+@using HotelReservationSystem1.Helpers
 @{
     ViewData["Title"] = "Create Reservation";
     var selectedRoomId = Model?.RoomId ?? 0;
@@ -48,8 +49,30 @@
                         <!-- Room Details Preview -->
                         <div id="roomDetails" class="card bg-light mb-3" style="display: none;">
                             <div class="card-body">
-                                <h6 class="card-title">Selected Room Details</h6>
-                                <div id="roomInfo"></div>
+                                <h6 class="card-title"><i class="bi bi-info-circle"></i> Selected Room Details</h6>
+                                <div class="row" id="roomInfo">
+                                    <div class="col-md-4">
+                                        <small class="text-muted">Room Type:</small>
+                                        <div id="roomType" class="fw-bold">-</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <small class="text-muted">Capacity:</small>
+                                        <div id="roomCapacity" class="fw-bold">-</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <small class="text-muted">Price per Night:</small>
+                                        <div id="roomPrice" class="fw-bold text-success">-</div>
+                                    </div>
+                                </div>
+                                @if (ViewBag.SelectedRoom != null)
+                                {
+                                    var room = ViewBag.SelectedRoom;
+                                    if (!string.IsNullOrEmpty(room.Description))
+                                    {
+                                        <hr />
+                                        <p class="mb-0 small text-muted">@room.Description</p>
+                                    }
+                                }
                             </div>
                         </div>
                         
@@ -61,7 +84,8 @@
                                 </label>
                                 <input asp-for="CheckInDate" class="form-control" type="date" 
                                        min="@DateTime.Now.ToString("yyyy-MM-dd")" 
-                                       value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                                       value="@DateTime.Now.ToString("yyyy-MM-dd")" 
+                                       id="checkInDate" />
                                 <span asp-validation-for="CheckInDate" class="text-danger"></span>
                             </div>
                             
@@ -71,7 +95,8 @@
                                 </label>
                                 <input asp-for="CheckOutDate" class="form-control" type="date" 
                                        min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" 
-                                       value="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" />
+                                       value="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" 
+                                       id="checkOutDate" />
                                 <span asp-validation-for="CheckOutDate" class="text-danger"></span>
                             </div>
                         </div>
@@ -81,9 +106,9 @@
                             <label asp-for="NumberOfGuests" class="form-label">
                                 <i class="bi bi-people"></i> Number of Guests
                             </label>
-                            <input asp-for="NumberOfGuests" class="form-control" type="number" min="1" value="1" />
+                            <input asp-for="NumberOfGuests" class="form-control" type="number" min="1" value="1" id="guestsInput" />
                             <span asp-validation-for="NumberOfGuests" class="text-danger"></span>
-                            <small class="form-text text-muted">Maximum capacity depends on room type</small>
+                            <small class="form-text text-muted">Maximum capacity: <span id="maxCapacity">-</span></small>
                         </div>
                         
                         <!-- Special Requests -->
@@ -96,28 +121,36 @@
                             <span asp-validation-for="SpecialRequests" class="text-danger"></span>
                         </div>
                         
-                        <!-- Estimated Cost Display -->
-                        <div class="card bg-info bg-opacity-10 border-info mb-3">
+                        <!-- Pricing Summary -->
+                        <div class="card bg-primary bg-opacity-10 border-primary mb-3">
                             <div class="card-body">
                                 <h6 class="card-title">
                                     <i class="bi bi-cash-stack"></i> Booking Summary
                                 </h6>
-                                <div class="row">
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <small class="text-muted">Price per Night:</small>
+                                        <div id="pricePerNight" class="fw-bold">-</div>
+                                    </div>
                                     <div class="col-6">
                                         <small class="text-muted">Number of Nights:</small>
                                         <div id="nightsDisplay" class="fw-bold">-</div>
                                     </div>
-                                    <div class="col-6">
-                                        <small class="text-muted">Estimated Total:</small>
-                                        <div id="totalDisplay" class="fw-bold text-success">-</div>
-                                    </div>
                                 </div>
+                                <hr />
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Total Amount:</h5>
+                                    <h4 id="totalDisplay" class="mb-0 text-success fw-bold">-</h4>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="bi bi-info-circle"></i> Total calculated based on: Room Price × Number of Nights
+                                </small>
                             </div>
                         </div>
                         
                         <!-- Action Buttons -->
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
                                 <i class="bi bi-check-circle"></i> Confirm Booking
                             </button>
                             <a asp-controller="Rooms" asp-action="Index" class="btn btn-secondary btn-lg">
@@ -135,10 +168,68 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     
     <script>
-        // Update check-out date minimum when check-in changes
-        const checkInInput = document.querySelector('input[name="CheckInDate"]');
-        const checkOutInput = document.querySelector('input[name="CheckOutDate"]');
+        // Store room data from server
+        const rooms = @Html.Raw(Json.Serialize(ViewBag.AvailableRooms ?? new List<object>()));
         
+        // Get form elements
+        const roomSelect = document.getElementById('roomSelect');
+        const checkInInput = document.getElementById('checkInDate');
+        const checkOutInput = document.getElementById('checkOutDate');
+        const guestsInput = document.getElementById('guestsInput');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Get display elements
+        const roomDetails = document.getElementById('roomDetails');
+        const roomType = document.getElementById('roomType');
+        const roomCapacity = document.getElementById('roomCapacity');
+        const roomPrice = document.getElementById('roomPrice');
+        const maxCapacity = document.getElementById('maxCapacity');
+        const pricePerNight = document.getElementById('pricePerNight');
+        const nightsDisplay = document.getElementById('nightsDisplay');
+        const totalDisplay = document.getElementById('totalDisplay');
+        
+        let selectedRoom = null;
+        
+        // Room selection change
+        if (roomSelect) {
+            roomSelect.addEventListener('change', function() {
+                const roomId = parseInt(this.value);
+                selectedRoom = rooms.find(r => r.id === roomId || r.Id === roomId);
+                
+                if (selectedRoom) {
+                    const type = selectedRoom.RoomType || selectedRoom.roomType;
+                    const capacity = selectedRoom.Capacity || selectedRoom.capacity;
+                    const price = selectedRoom.PricePerNight || selectedRoom.pricePerNight;
+                    
+                    // Show room details
+                    roomDetails.style.display = 'block';
+                    roomType.textContent = type;
+                    roomCapacity.textContent = capacity + ' guests';
+                    roomPrice.textContent = '\u20B1' + price.toFixed(2);
+                    maxCapacity.textContent = capacity + ' guests';
+                    
+                    // Validate guest count
+                    if (guestsInput.value > capacity) {
+                        guestsInput.value = capacity;
+                    }
+                    guestsInput.max = capacity;
+                    
+                    calculateTotal();
+                } else {
+                    // Hide room details
+                    roomDetails.style.display = 'none';
+                    selectedRoom = null;
+                    resetPricing();
+                }
+            });
+            
+            // Initialize with pre-selected room if any
+            if (roomSelect.value) {
+                roomSelect.dispatchEvent(new Event('change'));
+            }
+        }
+        
+        // Date changes
         if (checkInInput && checkOutInput) {
             checkInInput.addEventListener('change', function() {
                 const checkInDate = new Date(this.value);
@@ -157,38 +248,57 @@
             checkOutInput.addEventListener('change', calculateTotal);
         }
         
-        // Calculate nights and estimated total
+        // Calculate total pricing
         function calculateTotal() {
-            if (!checkInInput || !checkOutInput) return;
+            if (!checkInInput || !checkOutInput || !selectedRoom) {
+                resetPricing();
+                return;
+            }
             
             const checkIn = new Date(checkInInput.value);
             const checkOut = new Date(checkOutInput.value);
             
             if (checkIn && checkOut && checkOut > checkIn) {
                 const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
-                const nightsEl = document.getElementById('nightsDisplay');
-                const totalEl = document.getElementById('totalDisplay');
+                const pricePN = selectedRoom.PricePerNight || selectedRoom.pricePerNight;
+                const total = pricePN * nights;
                 
-                if (nightsEl) {
-                    nightsEl.textContent = nights + ' night' + (nights > 1 ? 's' : '');
-                }
+                // Update displays
+                pricePerNight.textContent = '\u20B1' + pricePN.toFixed(2);
+                nightsDisplay.textContent = nights + ' night' + (nights > 1 ? 's' : '');
+                totalDisplay.textContent = '\u20B1' + total.toFixed(2);
                 
-                if (totalEl) {
-                    // Note: Actual total will be calculated on server
-                    totalEl.textContent = 'Calculated at checkout';
-                }
+                // Enable submit button
+                submitBtn.disabled = false;
             } else {
-                const nightsEl = document.getElementById('nightsDisplay');
-                const totalEl = document.getElementById('totalDisplay');
-                
-                if (nightsEl) nightsEl.textContent = '-';
-                if (totalEl) totalEl.textContent = '-';
+                resetPricing();
             }
+        }
+        
+        // Reset pricing display
+        function resetPricing() {
+            pricePerNight.textContent = '-';
+            nightsDisplay.textContent = '-';
+            totalDisplay.textContent = '-';
+        }
+        
+        // Guest count validation
+        if (guestsInput) {
+            guestsInput.addEventListener('input', function() {
+                if (selectedRoom) {
+                    const capacity = selectedRoom.Capacity || selectedRoom.capacity;
+                    if (this.value > capacity) {
+                        this.value = capacity;
+                    }
+                }
+            });
         }
         
         // Initial calculation
         document.addEventListener('DOMContentLoaded', function() {
-            calculateTotal();
+            if (roomSelect && roomSelect.value) {
+                calculateTotal();
+            }
         });
     </script>
 }

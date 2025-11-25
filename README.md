@@ -37,11 +37,21 @@ Carmen Grand Hotel offers luxury accommodations and exceptional service in the h
   - Reservation oversight
   - User management (Admin only)
   - Reports and analytics
+  - **Print reports functionality** for all admin pages
 
 - **Staff Access**
   - Dashboard and reports access
   - Room and reservation management
   - Limited administrative privileges
+
+- **Print Reports**
+  - Print dashboard summary reports
+  - Print reservations reports with filters
+  - Print rooms inventory reports
+  - Print user management reports
+  - Print analytics and statistics reports
+  - Professional print layout with hotel branding
+  - Export to PDF via browser print dialog
 
 ## ??? Technology Stack
 

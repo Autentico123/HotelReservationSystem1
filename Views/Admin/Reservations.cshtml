@@ -6,12 +6,25 @@
     var currentStatus = ViewBag.CurrentStatus as string ?? "all";
 }
 
+<!-- Print Header (Hidden on screen, visible on print) -->
+<div class="print-header">
+    <h1>Carmen Grand Hotel - Reservations Report</h1>
+    <p>Generated on: @DateTime.Now.ToString("MMMM dd, yyyy hh:mm tt")</p>
+    <p>Filter: @(currentStatus == "all" ? "All Reservations" : currentStatus + " Reservations")</p>
+    <p>Carmen, Bohol | Phone: +639123478567 | Email: info@carmengrandhotel.com</p>
+</div>
+
 <div class="fade-in">
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="mb-0">Reservations Management</h2>
             <p class="text-muted mb-0">View and manage all reservations</p>
+        </div>
+        <div class="no-print">
+            <button onclick="window.print()" class="btn print-button">
+                <i class="bi bi-printer-fill"></i> Print Report
+            </button>
         </div>
     </div>
 
